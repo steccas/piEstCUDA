@@ -47,16 +47,12 @@ __global__ void init(unsigned int seed, curandState_t *states)
 {
     int i = threadIdx.x + blockIdx.x * blockDim.x;
 
-    /*if (i >= t)
-        return;*/
     curand_init(seed, i, 0, states + i); //funzione proprietaria della curand: genera i semi
 } //Kernel di inizializzazione: qui vengono generati i semi per curand
 
 __global__ void mc_curand(int *hits, curandState_t *states, int c)
 {
     int i = threadIdx.x + blockIdx.x * blockDim.x;
-    /*if (i >= t)
-        return;*/
 
     int tHits = 0;
 
@@ -82,8 +78,6 @@ __global__ void mc_curand(int *hits, curandState_t *states, int c)
 __global__ void mc_warp(int *hits, unsigned *state, int c)
 {
     int i = blockIdx.x * blockDim.x + threadIdx.x;
-    /*if (i >= c)
-        return;*/
 
     //inizializzo l'RNG
     unsigned rngRegs[WarpStandard_REG_COUNT];
@@ -175,11 +169,6 @@ int main(int argc, char **argv)
     int N = atoi(argv[1]);
     int t = atoi(argv[2]);
 
-    /*if (N >= 2097152 && t == 0)
-    {
-        fprintf(stderr, "Troppi campioni\n");
-        return 1;
-    }*/
     if (t < 0 || t > 1)
     {
         fprintf(stderr, "Metodo non valido\n");
@@ -306,8 +295,6 @@ int main(int argc, char **argv)
     } //curand
 
     //printf("Dopo mc / prima cpy\n");
-
-    //numbytes = N*sizeof(int);
 
     float totRuntime = 0.0;
 

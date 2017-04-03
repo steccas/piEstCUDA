@@ -25,7 +25,7 @@
 #include <stdint.h>
 #include <stdlib.h>
 #include <math.h>
-#include <numeric> 
+#include <numeric>
 
 //cuda incs
 
@@ -47,20 +47,17 @@ __global__ void init(unsigned int seed, curandState_t *states)
 {
     int i = threadIdx.x + blockIdx.x * blockDim.x;
 
-    /*if (i >= t)
-        return;*/
     curand_init(seed, i, 0, states + i); //funzione proprietaria della curand: genera i semi
 } //Kernel di inizializzazione: qui vengono generati i semi per curand
 
 __global__ void mc_curand(int *hits, curandState_t *states, int c)
 {
     int i = threadIdx.x + blockIdx.x * blockDim.x;
-    /*if (i >= t)
-        return;*/
 
     int tHits = 0;
-    
-    for (int j=0; j<c; j++){
+
+    for (int j = 0; j < c; j++)
+    {
         //tramite la funzione curand_uniform ottengo un valore casuale
 
         float x = curand_uniform(states + i);
@@ -69,19 +66,15 @@ __global__ void mc_curand(int *hits, curandState_t *states, int c)
         //effettuo il passo dell'algoritmo mc_curand dove si verifica la somma dei quadrati
 
         float z = (x * x + y * y);
-        if (z <= 1.0) tHits++;
+        if (z <= 1.0)
+            tHits++;
     }
-    //printf("%d %f %f %f\n", i, x, y, z);
-    //printf("tHits: %d ; thread: %d\n", tHits, i);
-
     hits[i] = tHits;
 } //Kernel che esegue l'algoritmo Monte Carlo Hit or Miss usando la curand
 
 __global__ void mc_warp(int *hits, unsigned *state, int c)
 {
-    int i = blockIdx.x*blockDim.x+threadIdx.x;
-    /*if (i >= c)
-        return;*/
+    int i = blockIdx.x * blockDim.x + threadIdx.x;
 
     //inizializzo l'RNG
     unsigned rngRegs[WarpBuffered_REG_COUNT];
@@ -91,7 +84,8 @@ __global__ void mc_warp(int *hits, unsigned *state, int c)
 
     int tHits = 0;
 
-    for(int j=0; j<c; j++){
+    for (int j = 0; j < c; j++)
+    {
         unsigned long x = WarpBuffered_Generate(rngRegs, rngShmem);
         unsigned long y = WarpBuffered_Generate(rngRegs, rngShmem);
 
@@ -172,11 +166,6 @@ int main(int argc, char **argv)
     int N = atoi(argv[1]);
     int t = atoi(argv[2]);
 
-    /*if (N >= 2097152 && t == 0)
-    {
-        fprintf(stderr, "Troppi campioni\n");
-        return 1;
-    }*/
     if (t < 0 || t > 1)
     {
         fprintf(stderr, "Metodo non valido\n");
@@ -187,17 +176,18 @@ int main(int argc, char **argv)
 
     cudaError_t errore;
 
-    int devId=-1;
+    int devId = -1;
     cudaDeviceProp devProps;
 
     cudaGetDevice(&devId);
     cudaGetDeviceProperties(&devProps, devId);
-    unsigned gridSize=devProps.multiProcessorCount;
-  
-    unsigned totalThreads=BLOCK_SIZE*gridSize;
+    unsigned gridSize = devProps.multiProcessorCount;
+
+    unsigned totalThreads = BLOCK_SIZE * gridSize;
 
     int totThrds = (int)totalThreads;
-    if(N < totThrds) fprintf(stderr, "Usa almeno: %d campioni\n", totThrds);
+    if (N < totThrds)
+        fprintf(stderr, "Usa almeno: %d campioni\n", totThrds);
 
     int *d_hits;
     size_t numbytes = totThrds * sizeof(int);
@@ -223,8 +213,8 @@ int main(int argc, char **argv)
     size_t iobytes;
 
     int numBlocks = devProps.multiProcessorCount * 6;
-    
-    int Nt = N/totThrds;
+
+    int Nt = N / totThrds;
     printf("Nt: %d Threads: %d\n", Nt, totThrds);
 
     if (t == 1)
@@ -303,8 +293,6 @@ int main(int argc, char **argv)
 
     //printf("Dopo mc / prima cpy\n");
 
-    //numbytes = N*sizeof(int);
-
     float totRuntime = 0.0;
 
     errore = cudaEventSynchronize(dopo_mc);
@@ -375,15 +363,15 @@ int main(int argc, char **argv)
     cout << "Hits: " << h_hits_sum << "\n";
     //cout << "HitsT: " << totalHits << "\n";
 
-    float AS = float(h_hits_sum) / (totThrds*float(Nt));
+    float AS = float(h_hits_sum) / (totThrds * float(Nt));
 
     float estPi = AS * 4;
 
     cout << "Est PI: " << estPi << "\n";
-	
-	float rError = fabs(1.0 - estPi/M_PI);
 
-	cout << "Relative error: " << rError << "\n";
+    float rError = fabs(1.0 - estPi / M_PI);
+
+    cout << "Relative error: " << rError << "\n";
 
     //cudaFree(states);
     cudaFree(d_hits);
