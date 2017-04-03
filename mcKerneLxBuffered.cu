@@ -323,12 +323,6 @@ int main(int argc, char **argv)
 
     totRuntime += runtime;
 
-    /*cudaDeviceProp props;
-
-    errore = cudaGetDeviceProperties(&props, 0);
-
-    numBlocks = props.multiProcessorCount * 6;*/
-
     //effettuo la riduzione (chiamando l'apposito kernel) dell'array delle hits in modo di ottenerne il totale
 
     int *dvrid = NULL;
@@ -355,7 +349,7 @@ int main(int argc, char **argv)
     check_error(errore, "rid");
     errore = cudaEventElapsedTime(&runtime, evt[0], evt[1]);
     check_error(errore, "time rid");
-    iobytes = totThrds * sizeof(int) * numBlocks;
+    iobytes = (totThrds + 1) * sizeof(int);
     printf("rid %gms, %g GB/s\n", runtime, iobytes / (runtime * 1.0e6));
 
     totRuntime += runtime;
